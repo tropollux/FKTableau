@@ -69,23 +69,17 @@ homeController = ($scope, $http, $location) ->
 		{label: "FKT", template: [
 			{text: "", center :"true"}
 			{text: "Free Kayak Tour", center :"true"}
-			{text: "Millau 2013", center :"true"}
+			{text: "Tournon 2014", center :"true"}
 			{text: "", center :"true"}
 		]}
-		{label: "NG", template: [ 
-			{text: "Free Kayak Tour", center :"true"}
-			{text: "", center :"true"}
-			{text: "Natural Games", center :"true"}
-			{text: "Millau 2013", center :"true"}
-		]}
-		{label: "Depart", template: [ 
+		{label: "Départs", template: [ 
 			{text: "", center :"true"}
 			{text: "Free Kayak Tour", center :"true"}
 			{text: "", center :"true"}
 			{text: "Qualif K1HS", center :"true"}
 			{text: "", center :"true"}
 		]}
-		{label: "Resultats", template: [ 
+		{label: "Résultats", template: [ 
 			{text: "", center :"true"}
 			{text: "Free Kayak Tour", center :"true"}
 			{text: "", center :"true"}
@@ -95,22 +89,6 @@ homeController = ($scope, $http, $location) ->
 	]
 
 
-	$scope.modeles2 = modeles: [
-		{
-			label: "modele 1"
-			modele: [
-				{text: "Free Kayak Tour", center :"true"}
-				{text: "Millau 2013", center :"true"}
-			]
-		}
-		{
-			label: "modele 2"
-			modele: [
-				{text: "Free Kayak Tour", center :"true"}
-				{text: "Millau 2013", center :"true"}
-			]
-		}
-	]
 
 
 

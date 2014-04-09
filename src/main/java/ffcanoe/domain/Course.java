@@ -16,6 +16,7 @@ public class Course {
 	
 	private int id;
 	private String nom;
+	
 	public String getNom() {
 		return nom;
 	}
