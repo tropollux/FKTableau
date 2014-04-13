@@ -23,5 +23,6 @@
         <mapping class="ffcanoe.domain.Phase"/>
         <mapping class="ffcanoe.domain.Manche"/>
         <mapping class="ffcanoe.domain.Run"/>
+        <mapping class="ffcanoe.domain.RunJuge"/>
     </session-factory>
 </hibernate-configuration>
