@@ -34,6 +34,7 @@ import ffcanoe.domain.Manche;
 import ffcanoe.domain.Phase;
 import ffcanoe.domain.PointsRun;
 import ffcanoe.domain.Run;
+import ffcanoe.domain.RunJuge;
 
 @Singleton
 public class Classement {
@@ -254,7 +255,6 @@ public class Classement {
 	public List<Manche> classementProvisoire(int course, int phase) {
 		Session session = null;
 		List<Manche> resultats = null;
-		List<Manche> resultatsTries = null;
 
 		try {
 			session = sessionFactory.openSession();
@@ -271,14 +271,8 @@ public class Classement {
 			queryPhase.setParameter("phase", phase);
 			Phase lPhase = (Phase) queryPhase.uniqueResult();
 			
-			// on ramene tous les runs
-			List<Run> runs = null;
-			Query queryRun = session.createQuery("select r from Run r " +
-					"where r.course.id = :course and r.phase.typeManche = :phase " +
-					"order by r.run");
-			queryRun.setParameter("course", course);
-			queryRun.setParameter("phase", phase);
-			runs = queryRun.list();
+//			List<Run> runs = getAllRuns(session, course, phase);
+			List<Run> runs = getAllValidatedRuns(session, course, phase);
 			
 			for (Run run : runs) {
 				// mis à jour de la manche pour le bon dossard
@@ -352,6 +346,59 @@ public class Classement {
 	}
 
 	
+	/**
+	 * retourne tous les runs d'une phase (quelque soit leur état)
+	 *  
+	 * @param session
+	 * @param course
+	 * @param phase
+	 * @return
+	 */
+	private List<Run> getAllRuns(Session session, int course, int phase) {
+		// on ramene tous les runs
+		List<Run> runs = null;
+		Query queryRun = session.createQuery("select r from Run r " +
+				"where r.course.id = :course and r.phase.typeManche = :phase " +
+				"order by r.run");
+		queryRun.setParameter("course", course);
+		queryRun.setParameter("phase", phase);
+		runs = queryRun.list();
+		return runs;
+	}
+
+	/**
+	 * retourne tous les runs validés d'une phase
+	 *  
+	 * @param session
+	 * @param course
+	 * @param phase
+	 * @return
+	 */
+	private List<Run> getAllValidatedRuns(Session session, int course, int phase) {
+		// on ramene tous les runs
+		List<Run> allRuns = getAllRuns(session, course, phase);
+		
+		List<RunJuge> runJuges;
+		Query queryRun = session.createQuery("select r from RunJuge r " +
+				"where r.course.id = :course and r.phase.typeManche = :phase " +
+				"and r.validation is null " +
+				"order by r.run");
+		queryRun.setParameter("course", course);
+		queryRun.setParameter("phase", phase);
+		runJuges = queryRun.list();
+		// maintenant faut les retirer de la liste des runs ...
+		// @TODO
+		for (RunJuge runJuge : runJuges) {
+			for (Run run : allRuns) {
+				if (run.getCoureur().equals(runJuge.getCoureur()) && run.getRun() == runJuge.getRun() ) {
+					// allRuns.remove(run);
+					System.out.println("run non validé : " + run);
+					run.setPoints(-1);
+				}
+			}
+		}
+		return allRuns;
+	}
 	/**
 	 * renvoie les resultats d'un dossard pour une course dans une phase donnee
 	 * 
