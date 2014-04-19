@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.Validate;
 import org.hibernate.Query;
 import org.hibernate.SQLQuery;
 import org.hibernate.Session;
@@ -278,21 +279,22 @@ public class Classement {
 				// mis à jour de la manche pour le bon dossard
 				for (Manche resultat : resultats) {
 					if (resultat.getCoureur().equals(run.getCoureur()) ) {
-						resultat.getRuns().add(new PointsRun(run.getRun(), run.getPoints()));
-						if (lPhase.getTypeResultat() == 0) {
-							// faut faire la somme
-							if (resultat.getTotalManche() != null) {
-								resultat.setTotalManche(resultat.getTotalManche() + run.getPoints());
+						resultat.getRuns().add(new PointsRun(run.getRun(), run.getPoints(), run.isValid()));
+						if (run.isValid()) {
+							if (lPhase.getTypeResultat() == 0) {
+								// faut faire la somme
+								if (resultat.getTotalManche() != null) {
+									resultat.setTotalManche(resultat.getTotalManche() + run.getPoints());
+								} else {
+									resultat.setTotalManche(run.getPoints());
+								}
 							} else {
-								resultat.setTotalManche(run.getPoints());
-							}
-						} else {
-							// on prend le meilleur
-							if (resultat.getTotalManche() == null || resultat.getTotalManche() < run.getPoints() ) {
-								resultat.setTotalManche(run.getPoints()); 
-							}
+								// on prend le meilleur
+								if (resultat.getTotalManche() == null || resultat.getTotalManche() < run.getPoints() ) {
+									resultat.setTotalManche(run.getPoints()); 
+								}
+							}					
 						}
-						
 					}
 				}
 			}
@@ -377,11 +379,12 @@ public class Classement {
 	private List<Run> getAllValidatedRuns(Session session, int course, int phase) {
 		// on ramene tous les runs
 		List<Run> allRuns = getAllRuns(session, course, phase);
+
 		
 		List<RunJuge> runJuges;
 		Query queryRun = session.createQuery("select r from RunJuge r " +
 				"where r.course.id = :course and r.phase.typeManche = :phase " +
-				"and r.validation is null " +
+				"and r.validation != 1 " +
 				"order by r.run");
 		queryRun.setParameter("course", course);
 		queryRun.setParameter("phase", phase);
@@ -391,9 +394,8 @@ public class Classement {
 		for (RunJuge runJuge : runJuges) {
 			for (Run run : allRuns) {
 				if (run.getCoureur().equals(runJuge.getCoureur()) && run.getRun() == runJuge.getRun() ) {
-					// allRuns.remove(run);
 					System.out.println("run non validé : " + run);
-					run.setPoints(-1);
+					run.setValid(false);
 				}
 			}
 		}
@@ -446,15 +448,17 @@ public class Classement {
 						// on fait la somme
 						int i=1;
 						for (Run run : points) {
-							totalPoint += run.getPoints();
-							pointRuns.add(new PointsRun(i++, run.getPoints()));
+							if (run.isValid()) {
+								totalPoint += run.getPoints();
+							}
+							pointRuns.add(new PointsRun(i++, run.getPoints(), run.isValid()));
 						}
 					} else {
 						// on garde le meilleur
 						int i=1;
 						for (Run run : points) {
-							if (run.getPoints() > totalPoint) totalPoint = run.getPoints();
-							pointRuns.add(new PointsRun(i++, run.getPoints()));
+							if (run.getPoints() > totalPoint && run.isValid()) totalPoint = run.getPoints();
+							pointRuns.add(new PointsRun(i++, run.getPoints(), run.isValid()));
 						}
 					}
 				}
@@ -681,15 +685,7 @@ public class Classement {
 			session = sessionFactory.openSession();
 //			Transaction transaction = session.beginTransaction();
 
-			// d'abord on regarde si la manche existe !!
-			Query queryManche = session.createQuery("from Manche m " +
-					"where m.course.id = :courseId " +
-					"and m.phase.typeManche = :typeManche " +
-					"and m.coureur.codeCoureur = :codeCoureur ");
-			queryManche.setParameter("courseId", courseId);
-			queryManche.setParameter("typeManche", typeManche);
-			queryManche.setParameter("codeCoureur", codeCoureur);
-			manche = (Manche)queryManche.uniqueResult();
+			manche = findManche(courseId, codeCoureur, typeManche, session);
 			
 			if (manche == null) {
 				// il faut commencer par creer la manche
@@ -705,15 +701,7 @@ public class Classement {
 				insertMancheQuery.executeUpdate();
 				maj = true;
 
-				// et on retourne la chercher !! (en JPA)
-				Query queryMancheBis = session.createQuery("from Manche m " +
-						"where m.course.id = :courseId " +
-						"and m.phase.typeManche = :typeManche " +
-						"and m.coureur.codeCoureur = :codeCoureur ");
-				queryMancheBis.setParameter("courseId", courseId);
-				queryMancheBis.setParameter("typeManche", typeManche);
-				queryMancheBis.setParameter("codeCoureur", codeCoureur);
-				manche = (Manche)queryMancheBis.uniqueResult();
+				manche = findManche(courseId, codeCoureur, typeManche, session);
 
 				System.out.println("import de Manche" + manche);
 			}
@@ -780,6 +768,21 @@ public class Classement {
 		return (maj ? manche : null);
 	}
 
+	private Manche findManche(int courseId, String codeCoureur, int typeManche,
+			Session session) {
+		Manche manche;
+		// d'abord on regarde si la manche existe !!
+		Query queryManche = session.createQuery("from Manche m " +
+				"where m.course.id = :courseId " +
+				"and m.phase.typeManche = :typeManche " +
+				"and m.coureur.codeCoureur = :codeCoureur ");
+		queryManche.setParameter("courseId", courseId);
+		queryManche.setParameter("typeManche", typeManche);
+		queryManche.setParameter("codeCoureur", codeCoureur);
+		manche = (Manche)queryManche.uniqueResult();
+		return manche;
+	}
+
 	/**
 	 * import le fichier dans la base s il na pas deja ete lu (controle le cheksum)
 	 * 
@@ -789,18 +792,19 @@ public class Classement {
 	 */
 	public Manche importFile(String fileName) throws FileNotFoundException {
 		File file = new File(fileName);
+		File fileJuges = new File("juge.data");
 		long crc32 = 0;
 		int nbLigneslus = 0;
 		Manche lastManche = null;
 		
-		if ( ! file.exists() || ! file.canRead()) {
-			System.out.println("impossible de lire le fichier " + fileName);
+		if ( !file.exists() || !file.canRead() || !fileJuges.exists() || !fileJuges.canRead()) {
+			System.out.println("impossible de lire le ou les fichiers " + fileName);
 		} else {
 			try {
 				// on ne fait rien si c'est le meme que celui d'avant
-				crc32 = FileUtils.checksumCRC32(file);
+				crc32 = FileUtils.checksumCRC32(file) + FileUtils.checksumCRC32(fileJuges);
 				if (crc32 == lastChecksum) {
-					System.out.println("fichier deja lu");
+					System.out.println("fichiers deja lu");
 					// DEBUG 
 					return null;
 				}
@@ -840,6 +844,37 @@ public class Classement {
 					}
 				}
 				bf.close();
+				
+				System.out.println("c'est parti pour l'import du fichier juge.data");
+				bf = new BufferedReader(new FileReader(fileJuges));
+				String newJuge;
+				while ((newJuge = bf.readLine()) != null) {
+					String[] split = newJuge.split("\\|");
+					// rappel du format attendu
+					// 77|K1D223927|32|2|1|50|10|0|||160|1
+					if (split.length < 11) {
+						System.out.println("la ligne est incomplete [" + newJuge + "]");
+					} else if (split[1].length() == 0 
+							|| split[2].length() == 0 
+							|| split[3].length() == 0 
+							|| split[4].length() == 0) {
+						System.out.println("format incorrect [" + newJuge + "]");
+					} else {
+						int courseId = Integer.parseInt(split[0]);
+						String codeCoureur = split[1];
+						int typeManche = Integer.parseInt(split[2]);
+						int nRun = Integer.parseInt(split[3]);
+						int nJuge = Integer.parseInt(split[4]);
+						int nvalidation = 0;
+						if (split.length > 11) {
+							nvalidation = Integer.parseInt(split[11]);
+						}
+						System.out.println("tentative d'import de la ligne " + newJuge);
+						majJuge(courseId, codeCoureur, typeManche, nRun, nJuge, nvalidation);
+
+					}
+				}
+				bf.close();
 				lastChecksum = crc32;
 				// DEBUG file.renameTo(new File(fileName + ".ok"));
 			} catch ( IOException e) {
@@ -849,6 +884,97 @@ public class Classement {
 		return lastManche;
 	}
 
+	private void majJuge(int courseId, String codeCoureur, int typeManche, int nRun, int nJuge, int nValidation) {
+/*
+ *  	Code_evenement	integer	not null	,
+		Code_coureur	char(50)	not null	,
+		Code_manche	integer	not null	,
+		Code_run	integer	not null	,
+		Code_juge	integer	not null	,
+		Entry_move	integer		,
+		Fluidite	integer		,
+		Bonus_spectacle	integer		,
+		Reserve_1	char(30)		,
+		Reserve_2	char(30)		,
+		Total_run_juge	integer		, 
+		Validation integer
+ */
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			Manche manche = findManche(courseId, codeCoureur, typeManche, session);
+			
+			Query query = session.createQuery("from RunJuge r " +
+						"where r.course = :course " +
+						"and r.phase = :phase " +
+						"and r.coureur = :dossard " +
+						"and r.run = :run " +
+						"and r.juge = :juge");
+			query.setParameter("course", manche.getCourse());
+			query.setParameter("phase", manche.getPhase());
+			query.setParameter("dossard", manche.getCoureur());
+			query.setParameter("run", nRun);
+			query.setParameter("juge", nJuge);
+			RunJuge runJuge = (RunJuge)query.uniqueResult();
+
+			if (runJuge != null) {
+				if ( !runJuge.isValidate() && nValidation == 1 ) {
+					// on le valide 
+					SQLQuery updateJugeQuery = 
+							session.createSQLQuery("update Resultat_Manche_Run_Juges " +
+									"set Validation =:validation " +
+									"where Code_run=:code_run " +
+									"and Code_manche=:code_manche " +
+									"and Code_evenement=:code_evenement " +
+									"and Code_coureur=:code_coureur " + 
+									"and Code_juge=:code_juge ");
+					updateJugeQuery.setParameter("validation", nValidation);
+					updateJugeQuery.setParameter("code_run", nRun); 
+					updateJugeQuery.setParameter("code_manche", manche.getPhase().getTypeManche());
+					updateJugeQuery.setParameter("code_evenement", manche.getCourse().getId());
+					updateJugeQuery.setParameter("code_coureur", manche.getCoureur().getCodeCoureur());
+					updateJugeQuery.setParameter("code_juge", nJuge);
+					updateJugeQuery.executeUpdate();
+					System.out.println("Validation pour le Juge : " + runJuge );
+				} else {
+					System.out.println("Validation déjà effectuée ou inchangée pour le Juge : " + runJuge );
+				}
+			} else {
+				SQLQuery insertQuery = 
+						session.createSQLQuery("insert into Resultat_Manche_Run_Juges " +
+								"(Code_evenement, Code_coureur, Code_manche, Code_run, Code_juge, Validation) " +
+								"values (:code_evenement, :code_coureur, :code_manche, :code_run, :code_juge, :validation) ");
+				insertQuery.setParameter("code_manche", manche.getPhase().getTypeManche());
+				insertQuery.setParameter("code_evenement", manche.getCourse().getId());
+				insertQuery.setParameter("code_coureur", manche.getCoureur().getCodeCoureur());
+				insertQuery.setParameter("code_run", nRun);
+				insertQuery.setParameter("code_juge", nJuge);
+				insertQuery.setParameter("validation", nValidation);
+				insertQuery.executeUpdate();
+				System.out.println("creation du JUGE : " + runJuge + "avec les infos" + codeCoureur + " " + nRun + " " + nValidation );
+			}
+//			transaction.commit();
+			
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		} 
+	}
+
+	/**
+	 * demande l'import des données concernant la course, ...
+	 * 
+	 * @param course
+	 * @param phase
+	 * @param timeout
+	 * @param codeCoureur
+	 * @param fileName
+	 * @return
+	 * @throws IOException
+	 */
 	public Manche importFile(int course, int phase, int timeout, String codeCoureur, String fileName) throws IOException  {
 		// en JDK7
 		Path path = Paths.get(COURSE_ID_BAT);

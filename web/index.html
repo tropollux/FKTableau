@@ -1,6 +1,8 @@
 ---
 layout: layouts/default.html
 title: Affichage Freestyle
+script: controllers.coffee
+---
 <style>
 html {
   background-image: none;
@@ -119,7 +121,7 @@ html {
 					<th>Pl</th>
 					<th>Dossard</th>
 					<th>Nom</th>
- 					<th ng-repeat="i in runs">Run{{i}}</th>
+ 					<th ng-repeat="i in runs">Run {{i}}</th>
 					<th>Total</th>
 					<th>Maj</th>
 				</tr>
@@ -146,7 +148,7 @@ html {
 						{{resultat.coureur.bateau}}
 					</td>
  					<td ng-repeat="run in resultat.runs">
-						<input type="text" class="input-mini" ng-model="run.points"></input>
+						<input type="text" class="input-mini" ng-class='{notvalid: !run.valid}' ng-model="run.points"></input>
 					</td>
  					<td>
 						<input type="text" class="input-mini" ng-model="resultat.totalManche"/>

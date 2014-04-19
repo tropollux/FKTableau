@@ -1,7 +1,7 @@
 
 @echo off
 
-::set _destination="\\MAC-MINI\Dossier public de Cécile"
+::set _destination="\\MAC-MINI\Dossier public de CÃ©cile"
 ::set _destination="u:\"
 ::set _destination=C:\Users\remi\workspaces\maven\tableau.home
 set _destination=%1%
@@ -12,9 +12,15 @@ set _db=ffcanoe.db4
 
 
 :begin
-copy ..\database\ffcanoe.db3 _db /y > nul
+copy ..\database\ffcanoe.db3 %_db% /y > nul
 
 call %_destination%\courseId.bat
+
+if "%fullCopy%" neq "" (
+	xcopy /Y %_db%* %_destination% > nul
+	echo "full copy"
+)
+
 if "%codeCoureur%" neq "" (
 	set _whereClause=and Code_coureur='%codeCoureur%'
 	) else (
@@ -27,6 +33,10 @@ echo %time% : transfert pour la course %courseId% phase %phase% codeCoureur %cod
 
 set _output=run.data
 set _order=select * from resultat_manche_run where Code_evenement=%courseId% and Code_manche=%phase% %_whereClause%;
+call:executeSQL %_order%
+
+set _output=juge.data
+set _order=select * from resultat_manche_run_juges where Code_evenement=%courseId% and Code_manche=%phase% %_whereClause%;
 call:executeSQL %_order%
 
 xcopy /Y *.data %_destination% > nul

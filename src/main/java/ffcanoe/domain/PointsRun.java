@@ -19,7 +19,7 @@ public class PointsRun implements Serializable{
 	 * 
 	 * valide par tous les juges
 	 */
-	private boolean valid;
+	private boolean valid = true;
 
 	public Integer getPoints() {
 		return points;
@@ -37,10 +37,11 @@ public class PointsRun implements Serializable{
 		this.run = run;
 	}
 
-	public PointsRun(Integer run, Integer points) {
+	public PointsRun(Integer run, Integer points, boolean b) {
 		super();
 		this.run = run;
 		this.points = points;
+		this.valid = b;
 	}
 
 	public PointsRun(Integer run) {

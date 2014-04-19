@@ -9,6 +9,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinColumns;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 @SuppressWarnings("serial")
 @Entity
@@ -53,6 +54,9 @@ public class Run implements Serializable{
 	@Column(name="Total_freestyle")
 	private Integer points;
 
+	@Transient
+	private boolean valid = true;
+	
 	public Course getCourse() {
 		return course;
 	}
@@ -137,6 +141,14 @@ public class Run implements Serializable{
 	public String toString() {
 		return "Run [course=" + course + ", coureur=" + coureur + ", phase="
 				+ phase + ", run=" + run + ", points=" + points + "]";
+	}
+
+	public boolean isValid() {
+		return valid;
+	}
+
+	public void setValid(boolean valid) {
+		this.valid = valid;
 	}
 	
 }

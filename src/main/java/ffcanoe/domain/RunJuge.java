@@ -17,15 +17,18 @@ public class RunJuge implements Serializable{
 	
 	
 	/*
-	 * 	Code_evenement  integer not null        ,
-		Code_coureur    char(50)        not null
-		Code_manche     integer not null        ,
-		Code_run        integer not null        ,
-		Total_freestyle double          ,
-		Cltc    int_clt         ,
-		Reserve_1       integer         ,
-		Reserve_2       integer         ,
-		Absent  integer
+	 * 	Code_evenement	integer	not null	,
+		Code_coureur	char(50)	not null	,
+		Code_manche	integer	not null	,
+		Code_run	integer	not null	,
+		Code_juge	integer	not null	,
+		Entry_move	integer		,
+		Fluidite	integer		,
+		Bonus_spectacle	integer		,
+		Reserve_1	char(30)		,
+		Reserve_2	char(30)		,
+		Total_run_juge	integer		, 
+		Validation integer
 	 */
 	
 	@Id
