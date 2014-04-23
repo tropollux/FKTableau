@@ -194,9 +194,17 @@ homeController = ($scope, $http, $location) ->
 					for $res in $scope.resultats
 						if $res.coureur.dossard == data.coureur.dossard
 							$scope.active = data.coureur.dossard
-							$scope.lastImportStatus = data.coureur.dossard
-							$scope.switchPaddle = $scope.autoWait
-					# on met a jour le tableau
+							# $scope.lastImportStatus = data.coureur.dossard
+							# $scope.switchPaddle = $scope.autoWait
+							# maintenant on verifie si tous ses runs sont valides
+							valid=true
+							for $run in data.runs
+								if !$run.valid
+									valid=false
+							if valid
+								$scope.lastImportStatus = data.coureur.dossard
+								$scope.switchPaddle = $scope.autoWait
+				# on met a jour le tableau
 				$scope.classement()
 			else
 				$scope.lastImportStatus="-1"
@@ -288,6 +296,7 @@ homeController = ($scope, $http, $location) ->
 							$scope.autoClock = Date.now()
 							$scope.importFile()
 							# si le dernier import a plus de n mn => on passe au suivant
+							# sauf qu'il faudrait changer uniquement si on vient de valider un run !!
 							if $scope.switchPaddle != null
 								$scope.switchPaddle =  $scope.switchPaddle - $scope.autoTimer
 								if $scope.switchPaddle < 0 
@@ -349,7 +358,8 @@ homeController = ($scope, $http, $location) ->
 		$strRun = ''
 		$nbRun=1
 		for $run in $res.runs
-			$strRun = $strRun + 'R' + $nbRun + ':' + ($run.points || "___") + ' '
+			# $strRun = $strRun + 'R' + $nbRun + ':' + ($run.points || "___") + ' '
+			$strRun = $strRun + 'R' + $nbRun + ':' + (($run.valid && $run.points) || "___") + ' '
 			$nbRun = $nbRun+1
 		if $strRun.length > 20
 			$scope.tableau.lignes.push { text: $strRun, scroll: true }

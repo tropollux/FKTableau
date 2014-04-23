@@ -197,26 +197,4 @@ public class ResultatResource extends AbstractResource {
 		return null;
 	}
 	
-		
-	/**
-	 * 
-	 * detail des points d'un bateau pour une course : le 203 dans la Qualif C1HJ
-	 * 
-	 * @param courseId
-	 * @param phase
-	 * @param dossardId
-	 * @return
-	 */
-	@GET
-	@Path("/classement/{course}/detail")
-	@Produces("application/json;encoding=utf-8")
-	public Manche getPoints(
-				@PathParam("course") int course, 
-				@QueryParam("phase") @DefaultValue("32") int phase,
-				@QueryParam("dossard") String dossard) {
-
-		Manche manche = classement.detailClassement(course, phase, dossard);
-		System.out.println(manche);
-		return manche;
-	}
-	}
+}
