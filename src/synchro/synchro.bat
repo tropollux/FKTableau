@@ -6,7 +6,7 @@
 ::set _destination=C:\Users\remi\workspaces\maven\tableau.home
 set _destination=%1%
 set _engine="..\sqlite3.exe"
-set _db=ffcanoe.db4
+set _db=ffcanoe.db3
 ::set _db=..\database\ffcanoe.db3
 ::set _init=init.sql
 
@@ -19,6 +19,7 @@ call %_destination%\courseId.bat
 if "%fullCopy%" neq "" (
 	xcopy /Y %_db%* %_destination% > nul
 	echo "full copy"
+	goto :waitPing
 )
 
 if "%codeCoureur%" neq "" (
@@ -41,6 +42,7 @@ call:executeSQL %_order%
 
 xcopy /Y *.data %_destination% > nul
 
+:waitPing
 ping 1.1.1.1 -n 1 -w %timeout% > nul
 goto:begin
 
