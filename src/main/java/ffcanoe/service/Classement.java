@@ -207,8 +207,8 @@ public class Classement {
 							mancheDavant);
 					dossards = new ArrayList<Dossard>();
 					for (Manche manche : definitif) {
-						if (manche.getClassement() <= manche.getPhase()
-								.getNbQualifies()) {
+						// si on n'a pas atteint les quotats on ajoute les nons classés !!!
+						if ((manche.getClassement() == null) || (manche.getClassement() <= manche.getPhase().getNbQualifies())) {
 							dossards.add(manche.getCoureur());
 						} else {
 							break;
