@@ -25,8 +25,10 @@ import org.hibernate.cfg.Configuration;
 import org.hibernate.service.ServiceRegistry;
 import org.hibernate.service.ServiceRegistryBuilder;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
+import ffcanoe.dao.CourseDAO;
 import ffcanoe.domain.Course;
 import ffcanoe.domain.Dossard;
 import ffcanoe.domain.Manche;
@@ -41,6 +43,9 @@ public class Classement {
 	private final static Charset ENCODING = StandardCharsets.ISO_8859_1;
 	private static SessionFactory sessionFactory = null;
 	private static ServiceRegistry serviceRegistry = null;
+	
+	@Inject
+	private CourseDAO courseDao;
 
 	/**
 	 * CRC du dernier fichier injecte
@@ -53,8 +58,7 @@ public class Classement {
 
 		Properties properties = configuration.getProperties();
 
-		serviceRegistry = new ServiceRegistryBuilder()
-				.applySettings(properties).buildServiceRegistry();
+		serviceRegistry = new ServiceRegistryBuilder().applySettings(properties).buildServiceRegistry();
 		sessionFactory = configuration.buildSessionFactory(serviceRegistry);
 
 	}
@@ -66,20 +70,7 @@ public class Classement {
 	 * @return
 	 */
 	public List<Course> getCourses() {
-		Session session = null;
-		List<Course> courses = null;
-		try {
-			session = sessionFactory.openSession();
-			Query query = session.createQuery("from Course");
-			courses = query.list();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
-		return courses;
+		return courseDao.getCourses();
 	}
 
 	/**
@@ -89,22 +80,7 @@ public class Classement {
 	 * @return
 	 */
 	public List<Dossard> getDossards(Integer courseId) {
-		Session session = null;
-		List<Dossard> dossards = null;
-		try {
-			session = sessionFactory.openSession();
-			Query query = session
-					.createQuery("select d from Dossard d where d.course.id = :courseId order by d.dossard");
-			query.setParameter("courseId", courseId);
-			dossards = query.list();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
-		return dossards;
+		return courseDao.getDossards(courseId);
 	}
 
 	/**
@@ -114,22 +90,7 @@ public class Classement {
 	 * @return
 	 */
 	public Dossard findDossard(String dossard) {
-		Session session = null;
-		Dossard result = null;
-		try {
-			session = sessionFactory.openSession();
-			Query query = session
-					.createQuery("select d from Dossard d where d.dossard = :dossard");
-			query.setParameter("dossard", dossard);
-			result = (Dossard) query.uniqueResult();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
-		return result;
+		return courseDao.findDossard(dossard);
 	}
 
 	/**
@@ -149,17 +110,16 @@ public class Classement {
 		List<Manche> provisoire = classementProvisoire(course, phase);
 		List<Manche> departs = new ArrayList<>();
 
-		Session session = null;
+		Session session = sessionFactory.openSession();
 		try {
-			session = sessionFactory.openSession();
-
 			// on cherche le detail de la phase pour connaitre le type de calcul
 			// !!
-			Query queryPhase = session.createQuery("select p from Phase p "
-					+ "where p.course.id = :course and p.typeManche = :phase ");
-			queryPhase.setParameter("course", course);
-			queryPhase.setParameter("phase", phase);
-			Phase lPhase = (Phase) queryPhase.uniqueResult();
+//			Query queryPhase = session.createQuery("select p from Phase p "
+//					+ "where p.course.id = :course and p.typeManche = :phase ");
+//			queryPhase.setParameter("course", course);
+//			queryPhase.setParameter("phase", phase);
+//			Phase lPhase = (Phase) queryPhase.uniqueResult();
+			Phase lPhase = courseDao.findPhase(course, phase);
 
 			List<Dossard> dossards = null;
 			if (lPhase.getTypeManche() == 32) {
@@ -186,29 +146,13 @@ public class Classement {
 							.println("ba on est bien embete : pas de qualif validée");
 				} else {
 					int mancheDavant = (int) list.get(0);
-					// sinon faut prendre les dossards de la manche d'avant
-					// Query query =
-					// session.createQuery("select m from Manche m " +
-					// "where m.course.id = :course " +
-					// "and m.phase.typeManche = :phase " +
-					// "and m.rang != null " +
-					// "and m.rang <= m.phase.nbQualifies " +
-					// "order by m.rang desc");
-					// query.setParameter("course", course);
-					// query.setParameter("phase", mancheDavant);
-					// List<Manche> qualifies = query.list();
-					// dossards = new ArrayList<Dossard>();
-					// for (Manche depart : qualifies) {
-					// System.out.println("depart :" + depart.getCoureur());
-					// dossards.add(depart.getCoureur());
-					// }
 					// tentative avec le classement de la manche d'avant
-					List<Manche> definitif = classementProvisoire(course,
-							mancheDavant);
+					List<Manche> definitif = classementProvisoire(course, mancheDavant);
 					dossards = new ArrayList<Dossard>();
+					Phase phaseDavant = courseDao.findPhase(course, mancheDavant);
 					for (Manche manche : definitif) {
 						// si on n'a pas atteint les quotats on ajoute les nons classés !!!
-						if ((manche.getClassement() == null) || (manche.getClassement() <= manche.getPhase().getNbQualifies())) {
+						if ((manche.getClassement() == null) || (manche.getClassement() <= phaseDavant.getNbQualifies())) {
 							dossards.add(manche.getCoureur());
 						} else {
 							break;
@@ -238,7 +182,7 @@ public class Classement {
 					Manche manche = new Manche();
 					manche.setCoureur(dossard);
 					manche.setCourse(lPhase.getCourse());
-					manche.setPhase(lPhase);
+					manche.setTypeManche(lPhase.getTypeManche());
 					for (int i = 0; i < lPhase.getNbRun(); i++) {
 						PointsRun runVide = new PointsRun(i + 1);
 						manche.getRuns().add(runVide);
@@ -273,21 +217,21 @@ public class Classement {
 			session = sessionFactory.openSession();
 			Query query = session
 					.createQuery("select m from Manche m "
-							+ "where m.course.id = :course and m.phase.typeManche = :phase ");
+							+ "where m.course.id = :course and m.typeManche = :phase ");
 			query.setParameter("course", course);
 			query.setParameter("phase", phase);
 			resultats = query.list();
 
 			// on cherche le detail de la phase pour connaitre le type de calcul
 			// !!
-			Query queryPhase = session.createQuery("select p from Phase p "
-					+ "where p.course.id = :course and p.typeManche = :phase ");
-			queryPhase.setParameter("course", course);
-			queryPhase.setParameter("phase", phase);
-			Phase lPhase = (Phase) queryPhase.uniqueResult();
+//			Query queryPhase = session.createQuery("select p from Phase p "
+//					+ "where p.course.id = :course and p.typeManche = :phase ");
+//			queryPhase.setParameter("course", course);
+//			queryPhase.setParameter("phase", phase);
+//			Phase lPhase = (Phase) queryPhase.uniqueResult();
+			Phase lPhase = courseDao.findPhase(course, phase);
 
-			// List<Run> runs = getAllRuns(session, course, phase);
-			List<Run> runs = getAllValidatedRuns(session, course, phase);
+			List<Run> runs = courseDao.getAllValidatedRuns(course, phase);
 
 			for (Run run : runs) {
 				// mis à jour de la manche pour le bon dossard
@@ -354,7 +298,7 @@ public class Classement {
 					nbReel++;
 				}
 				// on en profite aussi pour ajouter les runs vides manquants
-				manche.fillRuns();
+				manche.fillRuns(lPhase.getNbRun());
 			}
 
 		} catch (Exception ex) {
@@ -368,27 +312,6 @@ public class Classement {
 	}
 
 	/**
-	 * retourne tous les runs d'une phase (quelque soit leur état)
-	 * 
-	 * @param session
-	 * @param course
-	 * @param phase
-	 * @return
-	 */
-	private List<Run> getAllRuns(Session session, int course, int phase) {
-		// on ramene tous les runs
-		List<Run> runs = null;
-		Query queryRun = session
-				.createQuery("select r from Run r "
-						+ "where r.course.id = :course and r.phase.typeManche = :phase "
-						+ "order by r.run");
-		queryRun.setParameter("course", course);
-		queryRun.setParameter("phase", phase);
-		runs = queryRun.list();
-		return runs;
-	}
-
-	/**
 	 * retourne tous les runs validés d'une phase
 	 * 
 	 * @param session
@@ -396,48 +319,21 @@ public class Classement {
 	 * @param phase
 	 * @return
 	 */
-	private List<Run> getAllValidatedRuns(Session session, int course, int phase) {
-		// on ramene tous les runs
-		List<Run> allRuns = getAllRuns(session, course, phase);
-
-		List<RunJuge> runJuges;
-		Query queryRun = session
-				.createQuery("select r from RunJuge r "
-						+ "where r.course.id = :course and r.phase.typeManche = :phase "
-						+ "and (r.validation is null or r.validation != 1) "
-						+ "order by r.run");
-		queryRun.setParameter("course", course);
-		queryRun.setParameter("phase", phase);
-		runJuges = queryRun.list();
-		// maintenant faut les retirer de la liste des runs ...
-		for (RunJuge runJuge : runJuges) {
-			for (Run run : allRuns) {
-				if (run.getCoureur().equals(runJuge.getCoureur())
-						&& run.getRun() == runJuge.getRun()) {
-					System.out.println("run non validé : " + run);
-					run.setValid(false);
-				}
-			}
-		}
-		return allRuns;
-	}
-
+	
 	private Manche verifyRunValidation(Manche manche) {
-		Session session = null;
+		Session session = sessionFactory.openSession();
 		try {
-			session = sessionFactory.openSession();
-
 			// on ne cherche meme pas a calculer les runs ... juste les remplir pour savoir s'ils sont valides ou non
-			manche.fillRuns();
+			// manche.fillRuns();
 			
 			List<RunJuge> runJuges;
 			Query queryRunJuges = session.createQuery("from RunJuge r "
 					+ "where r.course = :course "
-					+ "and r.phase = :phase "
+					+ "and r.typeManche = :typeManche"
 					+ "and r.coureur = :dossard " 
 					+ "and (r.validation is null or r.validation != 1) ");
 			queryRunJuges.setParameter("course", manche.getCourse());
-			queryRunJuges.setParameter("phase", manche.getPhase());
+			queryRunJuges.setParameter("typeManche", manche.getTypeManche());
 			queryRunJuges.setParameter("dossard", manche.getCoureur());
 			runJuges = queryRunJuges.list();
 			List<PointsRun> runs = manche.getRuns();
@@ -454,22 +350,7 @@ public class Classement {
 	}
 
 	public List<Phase> getPhases(Integer course) {
-		Session session = null;
-		List<Phase> phases = null;
-		try {
-			session = sessionFactory.openSession();
-			Query query = session.createQuery("select p from Phase p "
-					+ "where p.course.id = :course");
-			query.setParameter("course", course);
-			phases = query.list();
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
-		return phases;
+		return courseDao.getPhases(course);
 	}
 
 	/** 
@@ -482,12 +363,11 @@ public class Classement {
 
 		int courseId = manche.getCourse().getId();
 		String codeCoureur = manche.getCoureur().getCodeCoureur();
-		int typeManche = manche.getPhase().getTypeManche();
 
 		for (PointsRun pointRun : manche.getRuns()) {
 			if (pointRun.getPoints() != null) {
 				// eventuellement on pourrait tester une autre valeur (-1)
-				majRun(courseId, codeCoureur, typeManche, pointRun.getRun(),
+				majRun(courseId, codeCoureur, manche.getTypeManche(), pointRun.getRun(),
 						pointRun.getPoints());
 			}
 		}
@@ -512,7 +392,7 @@ public class Classement {
 			session = sessionFactory.openSession();
 			// Transaction transaction = session.beginTransaction();
 
-			manche = findManche(courseId, codeCoureur, typeManche, session);
+			manche = courseDao.findManche(courseId, codeCoureur, typeManche);
 
 			if (manche == null) {
 				// il faut commencer par creer la manche
@@ -528,17 +408,17 @@ public class Classement {
 				insertMancheQuery.executeUpdate();
 				maj = true;
 
-				manche = findManche(courseId, codeCoureur, typeManche, session);
+				manche = courseDao.findManche(courseId, codeCoureur, typeManche);
 
 				System.out.println("import de Manche" + manche);
 			}
 
 			// ensuite on regarde si le run existe
 			Query queryRun = session.createQuery("from Run r "
-					+ "where r.course = :course " + "and r.phase = :phase "
+					+ "where r.course = :course " + "and r.typeManche = :typeManche "
 					+ "and r.coureur = :dossard " + "and r.run = :run");
 			queryRun.setParameter("course", manche.getCourse());
-			queryRun.setParameter("phase", manche.getPhase());
+			queryRun.setParameter("typeManche", typeManche);
 			queryRun.setParameter("dossard", manche.getCoureur());
 			queryRun.setParameter("run", nRun);
 			Run run = (Run) queryRun.uniqueResult();
@@ -594,21 +474,6 @@ public class Classement {
 			}
 		}
 		return (maj ? manche : null);
-	}
-
-	private Manche findManche(int courseId, String codeCoureur, int typeManche,
-			Session session) {
-		Manche manche;
-		// d'abord on regarde si la manche existe !!
-		Query queryManche = session.createQuery("from Manche m "
-				+ "where m.course.id = :courseId "
-				+ "and m.phase.typeManche = :typeManche "
-				+ "and m.coureur.codeCoureur = :codeCoureur ");
-		queryManche.setParameter("courseId", courseId);
-		queryManche.setParameter("typeManche", typeManche);
-		queryManche.setParameter("codeCoureur", codeCoureur);
-		manche = (Manche) queryManche.uniqueResult();
-		return manche;
 	}
 
 	/**
@@ -735,11 +600,9 @@ public class Classement {
 			if (split.length > 11)
 				validation = parseInteger(split[11]);
 
-			Session session = null;
+			Session session = sessionFactory.openSession();
 			try {
-				session = sessionFactory.openSession();
-				Manche manche = findManche(courseId, codeCoureur, typeManche,
-						session);
+				Manche manche = courseDao.findManche(courseId, codeCoureur, typeManche);
 
 				if (majJuge(manche, nRun, nJuge, entryMove, fluidite, bonus,
 						total, validation)) {
@@ -774,11 +637,11 @@ public class Classement {
 			session = sessionFactory.openSession();
 
 			Query query = session.createQuery("from RunJuge r "
-					+ "where r.course = :course " + "and r.phase = :phase "
+					+ "where r.course = :course " + "and r.typeManche = :typeManche "
 					+ "and r.coureur = :dossard " + "and r.run = :run "
 					+ "and r.juge = :juge");
 			query.setParameter("course", manche.getCourse());
-			query.setParameter("phase", manche.getPhase());
+			query.setParameter("typeManche", manche.getTypeManche());
 			query.setParameter("dossard", manche.getCoureur());
 			query.setParameter("run", nRun);
 			query.setParameter("juge", nJuge);
@@ -810,8 +673,7 @@ public class Classement {
 				updateJugeQuery.setParameter("total", total);
 				updateJugeQuery.setParameter("validation", validation);
 				updateJugeQuery.setParameter("code_run", nRun);
-				updateJugeQuery.setParameter("code_manche", manche.getPhase()
-						.getTypeManche());
+				updateJugeQuery.setParameter("code_manche", manche.getTypeManche());
 				updateJugeQuery.setParameter("code_evenement", manche
 						.getCourse().getId());
 				updateJugeQuery.setParameter("code_coureur", manche
@@ -824,8 +686,7 @@ public class Classement {
 						.createSQLQuery("insert into Resultat_Manche_Run_Juges "
 								+ "(Code_evenement, Code_coureur, Code_manche, Code_run, Code_juge, Validation, Entry_move, Fluidite, Bonus_spectacle, Total_run_juge) "
 								+ "values (:code_evenement, :code_coureur, :code_manche, :code_run, :code_juge, :validation, :entryMove, :fluidite, :bonus, :total) ");
-				insertQuery.setParameter("code_manche", manche.getPhase()
-						.getTypeManche());
+				insertQuery.setParameter("code_manche", manche.getTypeManche());
 				insertQuery.setParameter("code_evenement", manche.getCourse()
 						.getId());
 				insertQuery.setParameter("code_coureur", manche.getCoureur()

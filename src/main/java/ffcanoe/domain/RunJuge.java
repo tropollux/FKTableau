@@ -42,13 +42,17 @@ public class RunJuge implements Serializable{
 			{@JoinColumn(name="Code_evenement"), @JoinColumn(name="Code_coureur")} )
 	private Dossard coureur;
 	
+//	@Id
+//	@ManyToOne
+//	@JoinColumns(
+//			{@JoinColumn(name="Code_manche"),
+//			 @JoinColumn(name="Code_evenement")} )
+//	private Phase phase;
+
 	@Id
-	@ManyToOne
-	@JoinColumns(
-			{@JoinColumn(name="Code_manche"),
-			 @JoinColumn(name="Code_evenement")} )
-	private Phase phase;
-	
+	@Column(name="Code_Manche")
+	private int typeManche;
+
 	@Id
 	@Column(name="Code_run")
 	private Integer run;
@@ -96,14 +100,6 @@ public class RunJuge implements Serializable{
 		this.coureur = coureur;
 	}
 
-	public Phase getPhase() {
-		return phase;
-	}
-
-	public void setPhase(Phase typeManche) {
-		this.phase = typeManche;
-	}
-
 	public Integer getRun() {
 		return run;
 	}
@@ -116,13 +112,12 @@ public class RunJuge implements Serializable{
 		return (validation != null) && (validation == 1);
 	}
 
-	
-	@Override
-	public String toString() {
-		return "RunJuge [course=" + course + ", coureur=" + coureur
-				+ ", phase=" + phase + ", run=" + run + ", juge=" + juge
-				+ ", pointsJuge=" + pointsJuge + ", validation=" + validation
-				+ "]";
+	public int getTypeManche() {
+		return typeManche;
+	}
+
+	public void setTypeManche(int type) {
+		this.typeManche = type;
 	}
 
 	@Override
@@ -132,10 +127,10 @@ public class RunJuge implements Serializable{
 		result = prime * result + ((coureur == null) ? 0 : coureur.hashCode());
 		result = prime * result + ((course == null) ? 0 : course.hashCode());
 		result = prime * result + ((juge == null) ? 0 : juge.hashCode());
-		result = prime * result + ((phase == null) ? 0 : phase.hashCode());
 		result = prime * result
 				+ ((pointsJuge == null) ? 0 : pointsJuge.hashCode());
 		result = prime * result + ((run == null) ? 0 : run.hashCode());
+		result = prime * result + typeManche;
 		result = prime * result
 				+ ((validation == null) ? 0 : validation.hashCode());
 		return result;
@@ -165,11 +160,6 @@ public class RunJuge implements Serializable{
 				return false;
 		} else if (!juge.equals(other.juge))
 			return false;
-		if (phase == null) {
-			if (other.phase != null)
-				return false;
-		} else if (!phase.equals(other.phase))
-			return false;
 		if (pointsJuge == null) {
 			if (other.pointsJuge != null)
 				return false;
@@ -180,6 +170,8 @@ public class RunJuge implements Serializable{
 				return false;
 		} else if (!run.equals(other.run))
 			return false;
+		if (typeManche != other.typeManche)
+			return false;
 		if (validation == null) {
 			if (other.validation != null)
 				return false;
@@ -187,5 +179,12 @@ public class RunJuge implements Serializable{
 			return false;
 		return true;
 	}
-	
+
+	@Override
+	public String toString() {
+		return "RunJuge [course=" + course + ", coureur=" + coureur + ", type="
+				+ typeManche + ", run=" + run + ", juge=" + juge + ", pointsJuge="
+				+ pointsJuge + ", validation=" + validation + "]";
+	}
+
 }

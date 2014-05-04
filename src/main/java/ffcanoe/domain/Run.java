@@ -40,12 +40,17 @@ public class Run implements Serializable{
 			{@JoinColumn(name="Code_evenement"), @JoinColumn(name="Code_coureur")} )
 	private Dossard coureur;
 	
+//	@Id
+//	@ManyToOne
+//	@JoinColumns(
+//			{@JoinColumn(name="Code_manche"),
+//			 @JoinColumn(name="Code_evenement")} )
+//	private Phase phase;
+
 	@Id
-	@ManyToOne
-	@JoinColumns(
-			{@JoinColumn(name="Code_manche"),
-			 @JoinColumn(name="Code_evenement")} )
-	private Phase phase;
+	@Column(name="Code_Manche")
+	private int typeManche;
+
 	
 	@Id
 	@Column(name="Code_run")
@@ -73,12 +78,12 @@ public class Run implements Serializable{
 		this.coureur = coureur;
 	}
 
-	public Phase getPhase() {
-		return phase;
+	public int getTypeManche() {
+		return typeManche;
 	}
 
-	public void setPhase(Phase typeManche) {
-		this.phase = typeManche;
+	public void setTypeManche(int type) {
+		this.typeManche = type;
 	}
 
 	public Integer getRun() {
@@ -103,8 +108,9 @@ public class Run implements Serializable{
 		int result = 1;
 		result = prime * result + ((coureur == null) ? 0 : coureur.hashCode());
 		result = prime * result + ((course == null) ? 0 : course.hashCode());
-		result = prime * result + ((phase == null) ? 0 : phase.hashCode());
-		result = prime * result + run;
+		result = prime * result + ((points == null) ? 0 : points.hashCode());
+		result = prime * result + ((run == null) ? 0 : run.hashCode());
+		result = prime * result + typeManche;
 		return result;
 	}
 
@@ -127,20 +133,27 @@ public class Run implements Serializable{
 				return false;
 		} else if (!course.equals(other.course))
 			return false;
-		if (phase == null) {
-			if (other.phase != null)
+		if (points == null) {
+			if (other.points != null)
 				return false;
-		} else if (!phase.equals(other.phase))
+		} else if (!points.equals(other.points))
 			return false;
-		if (run != other.run)
+		if (run == null) {
+			if (other.run != null)
+				return false;
+		} else if (!run.equals(other.run))
+			return false;
+		if (typeManche != other.typeManche)
 			return false;
 		return true;
 	}
 
+
 	@Override
 	public String toString() {
-		return "Run [course=" + course + ", coureur=" + coureur + ", phase="
-				+ phase + ", run=" + run + ", points=" + points + "]";
+		return "Run [course=" + course + ", coureur=" + coureur + ", type="
+				+ typeManche + ", run=" + run + ", points=" + points + ", valid="
+				+ valid + "]";
 	}
 
 	public boolean isValid() {

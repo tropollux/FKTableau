@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -32,15 +33,9 @@ public class Manche implements Serializable{
 	@JoinColumn(name="Code_evenement")
 	private Course course;
 	
-	/**
-	 * qualif/demi, ..
-	 */
 	@Id
-	@ManyToOne
-	@JoinColumns({
-				@JoinColumn(name="Code_manche"),
-				@JoinColumn(name="Code_evenement")} )
-	private Phase phase;
+	@Column(name="Code_Manche")
+	private int typeManche;
 
 	/**
 	 * dossard
@@ -106,14 +101,6 @@ public class Manche implements Serializable{
 		this.coureur = coureur;
 	}
 
-	public Phase getPhase() {
-		return phase;
-	}
-
-	public void setPhase(Phase typeManche) {
-		this.phase = typeManche;
-	}
-
 	public Integer getTotalManche() {
 		return totalManche;
 	}
@@ -136,19 +123,27 @@ public class Manche implements Serializable{
 	/**
 	 * complete la liste des runs avec des valeurs null si besoin
 	 */
-	public void fillRuns() {
-		for (int i = runs.size(); i<phase.getNbRun(); i++) {
+	public void fillRuns(int nbRun) {
+		for (int i = runs.size(); i<nbRun; i++) {
 			runs.add(new PointsRun(i+1));
 		}
 	}
-	
+
+	public int getTypeManche() {
+		return typeManche;
+	}
+
+	public void setTypeManche(int type) {
+		this.typeManche = type;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((coureur == null) ? 0 : coureur.hashCode());
 		result = prime * result + ((course == null) ? 0 : course.hashCode());
-		result = prime * result + ((phase == null) ? 0 : phase.hashCode());
+		result = prime * result + typeManche;
 		return result;
 	}
 
@@ -171,20 +166,16 @@ public class Manche implements Serializable{
 				return false;
 		} else if (!course.equals(other.course))
 			return false;
-		if (phase == null) {
-			if (other.phase != null)
-				return false;
-		} else if (!phase.equals(other.phase))
+		if (typeManche != other.typeManche)
 			return false;
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "Manche [course=" + course + ", phase=" + phase + ", coureur="
+		return "Manche [course=" + course + ", type=" + typeManche + ", coureur="
 				+ coureur + ", rang=" + rang + ", classement=" + classement
 				+ ", runs=" + runs + ", totalManche=" + totalManche + "]";
 	}
-
 
 }
