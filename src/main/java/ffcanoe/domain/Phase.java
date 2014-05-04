@@ -15,6 +15,8 @@ import javax.persistence.Table;
 public class Phase implements Serializable{
 
 	@Id
+	private int id;
+
 	@ManyToOne
 	@JoinColumn(name="Id_evenement")
 	private Course course;
@@ -22,7 +24,6 @@ public class Phase implements Serializable{
 	@Column(name="Code_categorie")
 	private String categorie;
 	
-	@Id
 	@Column(name="Code_manche")
 	private Integer typeManche;
 
