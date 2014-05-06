@@ -104,64 +104,41 @@ public class Classement {
 	 * @param phase
 	 * @return
 	 */
-	public List<Manche> listeDepart(int course, int phase) {
+	public List<Manche> listeDepart(int phaseId) {
 
 		// on commence par calculer le classement provisoire
-		List<Manche> provisoire = classementProvisoire(course, phase);
+		List<Manche> provisoire = classementProvisoire(phaseId);
 		List<Manche> departs = new ArrayList<>();
 
 		Session session = sessionFactory.openSession();
 		try {
 			// on cherche le detail de la phase pour connaitre le type de calcul
-			// !!
-//			Query queryPhase = session.createQuery("select p from Phase p "
-//					+ "where p.course.id = :course and p.typeManche = :phase ");
-//			queryPhase.setParameter("course", course);
-//			queryPhase.setParameter("phase", phase);
-//			Phase lPhase = (Phase) queryPhase.uniqueResult();
-			Phase lPhase = courseDao.findPhase(course, phase);
+			Phase lPhase = courseDao.findPhaseById(phaseId);
 
 			List<Dossard> dossards = null;
 			if (lPhase.getTypeManche() == 32) {
-				// on commence par les dossards .. pour les qualifs ... apres on
-				// verra
 				Query queryDossard = session
 						.createQuery("select d from Dossard d "
-								+ "where d.course.id = :course "
+								+ "where d.course = :course "
 								+ "order by d.dossard");
-				queryDossard.setParameter("course", course);
+				queryDossard.setParameter("course", lPhase.getCourse());
 				dossards = queryDossard.list();
 			} else {
 				// faut trouver les resultats de la manche d'avant
-				// par exemple en commencant par trouver la manche d'avant
-				SQLQuery queryPreviousManche = session
-						.createSQLQuery("select min(d.Code_manche) from Resultat_Manche d "
-								+ "where d.Code_evenement = :course "
-								+ "and d.Code_manche > :phase");
-				queryPreviousManche.setParameter("course", course);
-				queryPreviousManche.setParameter("phase", phase);
-				List list = queryPreviousManche.list();
-				if (list.size() == 0) {
-					System.out
-							.println("ba on est bien embete : pas de qualif validée");
-				} else {
-					int mancheDavant = (int) list.get(0);
-					// tentative avec le classement de la manche d'avant
-					List<Manche> definitif = classementProvisoire(course, mancheDavant);
-					dossards = new ArrayList<Dossard>();
-					Phase phaseDavant = courseDao.findPhase(course, mancheDavant);
-					for (Manche manche : definitif) {
-						// si on n'a pas atteint les quotats on ajoute les nons classés !!!
-						if ((manche.getClassement() == null) || (manche.getClassement() <= phaseDavant.getNbQualifies())) {
-							dossards.add(manche.getCoureur());
-						} else {
-							break;
-						}
+				Phase previousPhase = courseDao.findPreviousPhase(lPhase);
+				// tentative avec le classement de la manche d'avant
+				List<Manche> definitif = classementProvisoire(previousPhase.getId());
+				dossards = new ArrayList<Dossard>();
+				for (Manche manche : definitif) {
+					// si on n'a pas atteint les quotats on ajoute les nons classés !!!
+					if ((manche.getClassement() == null) || (manche.getClassement() <= previousPhase.getNbQualifies())) {
+						dossards.add(manche.getCoureur());
+					} else {
+						break;
 					}
-					// reste plus qu'a l'inverser
-					Collections.reverse(dossards);
-
 				}
+				// reste plus qu'a l'inverser
+				Collections.reverse(dossards);
 
 			}
 			// puis on se fait une petite jointure a la main dans l'ordre des
@@ -209,29 +186,23 @@ public class Classement {
 	 * @param phase
 	 * @return
 	 */
-	public List<Manche> classementProvisoire(int course, int phase) {
+	public List<Manche> classementProvisoire(int phaseId) {
 		Session session = null;
 		List<Manche> resultats = null;
 
 		try {
+			Phase lPhase = courseDao.findPhaseById(phaseId);
+
 			session = sessionFactory.openSession();
 			Query query = session
 					.createQuery("select m from Manche m "
-							+ "where m.course.id = :course and m.typeManche = :phase ");
-			query.setParameter("course", course);
-			query.setParameter("phase", phase);
+							+ "where m.course = :course and m.typeManche = :typeManche ");
+			query.setParameter("course", lPhase.getCourse());
+			query.setParameter("typeManche", lPhase.getTypeManche());
 			resultats = query.list();
 
-			// on cherche le detail de la phase pour connaitre le type de calcul
-			// !!
-//			Query queryPhase = session.createQuery("select p from Phase p "
-//					+ "where p.course.id = :course and p.typeManche = :phase ");
-//			queryPhase.setParameter("course", course);
-//			queryPhase.setParameter("phase", phase);
-//			Phase lPhase = (Phase) queryPhase.uniqueResult();
-			Phase lPhase = courseDao.findPhase(course, phase);
 
-			List<Run> runs = courseDao.getAllValidatedRuns(course, phase);
+			List<Run> runs = courseDao.getAllValidatedRuns(lPhase);
 
 			for (Run run : runs) {
 				// mis à jour de la manche pour le bon dossard

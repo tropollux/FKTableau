@@ -96,7 +96,7 @@ html {
         
         	<div id="cmd">        		
         		<select id="course" ng-model="course" ng-options="course.nom for course in courses" ng-change="refreshPhase()"></select>
-        		<select ng-model="phase" ng-options="phase.libelle for phase in phases" ng-change="classement()"></select>
+        		<select ng-model="phase" ng-options="phase.libelle + ' ' + phase.categorie for phase in phases" ng-change="classement()"></select>
 				<a class="btn" ng-click="classement()"><i class="icon-refresh"></i></a>
 				<a class="btn" ng-click="toggleClassementTbl()" ng-class='{active: active == -1}'><i class="icon-tasks"></i></a>
 			    <button type="button" 

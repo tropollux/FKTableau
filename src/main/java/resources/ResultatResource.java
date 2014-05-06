@@ -50,7 +50,7 @@ public class ResultatResource extends AbstractResource {
 	@Path("/phases/{course}")
 	@Produces("application/json;encoding=utf-8")
 	public List<Phase> getPhases(@PathParam("course") Integer course) {
-		System.out.println("getPhases :" + course);
+//		System.out.println("getPhases :" + course);
 		return classement.getPhases(course);
 	}
 
@@ -103,12 +103,11 @@ public class ResultatResource extends AbstractResource {
 	 * @return
 	 */
 	@GET
-	@Path("/classement/{course}")
+	@Path("/classement/{phaseId}")
 	@Produces("application/json;encoding=utf-8")
 	public List<Manche> getResultats(
-				@PathParam("course") int course, 
-				@QueryParam("phase") @DefaultValue("32") int phase) {
-		return classement.classementProvisoire(course, phase);
+				@PathParam("phaseId") int phaseId) {
+		return classement.classementProvisoire(phaseId);
 	}
 
 	/**
@@ -119,12 +118,11 @@ public class ResultatResource extends AbstractResource {
 	 * @return
 	 */
 	@GET
-	@Path("/resultat/{course}")
+	@Path("/resultat/{phaseId}")
 	@Produces("application/json;encoding=utf-8")
 	public List<Manche> getResultat(
-				@PathParam("course") int course, 
-				@QueryParam("phase") @DefaultValue("32") int phase) {
-		List<Manche> provisoire = classement.classementProvisoire(course, phase);
+				@PathParam("phaseId") int phaseId) {
+		List<Manche> provisoire = classement.classementProvisoire(phaseId);
 		System.out.println("resultats provisoires");
 		int i=1;
 		
@@ -147,12 +145,11 @@ public class ResultatResource extends AbstractResource {
 	 * @return
 	 */
 	@GET
-	@Path("/depart/{course}")
+	@Path("/depart/{phaseId}")
 	@Produces("application/json;encoding=utf-8")
 	public List<Manche> getDeparts(
-				@PathParam("course") int course, 
-				@QueryParam("phase") @DefaultValue("32") int phase) {
-		return classement.listeDepart(course, phase);
+				@PathParam("phaseId") int phaseId) {
+		return classement.listeDepart(phaseId);
 	}
 	
 	/**

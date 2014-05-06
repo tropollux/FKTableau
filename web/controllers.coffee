@@ -134,12 +134,12 @@ homeController = ($scope, $http, $location) ->
 	$scope.classement= ->
 		$scope.runs = [1..$scope.phase.nbRun]
 		if $scope.tableau.result
-			$http.get('/ffcanoe/classement/' + $scope.course.id + '?phase=' + $scope.phase.typeManche).success (data) ->
+			$http.get('/ffcanoe/classement/' + $scope.phase.id).success (data) ->
 				$scope.resultats = data
 				if $scope.active != null
 					$scope.affiche()
 		else
-			$http.get('/ffcanoe/depart/' + $scope.course.id + '?phase=' + $scope.phase.typeManche).success (data) ->
+			$http.get('/ffcanoe/depart/' + $scope.phase.id).success (data) ->
 				$scope.resultats = data
 				if $scope.active != null
 					$scope.affiche()

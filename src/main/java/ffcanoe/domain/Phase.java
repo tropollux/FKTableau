@@ -133,6 +133,12 @@ public class Phase implements Serializable{
 				+ nbQualifies + ", typeResultat=" + typeResultat + ", libelle="
 				+ libelle + "]";
 	}
+	public int getId() {
+		return id;
+	}
+	public void setId(int id) {
+		this.id = id;
+	}
  
 
 }
