@@ -172,28 +172,6 @@ public class CourseDAO {
 		return phases;
 	}
 
-	public Phase findPhase(int course, int type) {
-		Session session = sessionFactory.openSession();
-		Phase phase = null;
-		try {
-			Query query = session.createQuery("select p from Phase p "
-					+ "where p.course.id = :course "
-					+ "and p.typeManche = :type");
-			query.setParameter("course", course);
-			query.setParameter("type", type);
-			List list = query.list();
-			if (list.size() > 1) {
-				System.out.println("Attention plusieurs phases pour une même manche" + course);
-			}
-			phase = (Phase) list.get(0);
-		} finally {
-			if (session != null) {
-				session.close();
-			}
-		}
-		return phase;
-	}
-
 	public Phase findPhaseById(int phaseId) {
 		Session session = sessionFactory.openSession();
 		Phase phase = null;
