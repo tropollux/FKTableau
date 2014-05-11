@@ -323,7 +323,7 @@ homeController = ($scope, $http, $location) ->
 					if i+1 < $scope.resultats.length
 						next = $scope.resultats[i+1]
 					else
-						alert "on est sur le dernier"
+						#alert "on est sur le dernier"
 						next = res
 				else
 					# alert "on reste dans la poule " + i
@@ -358,7 +358,6 @@ homeController = ($scope, $http, $location) ->
 		$strRun = ''
 		$nbRun=1
 		for $run in $res.runs
-			# $strRun = $strRun + 'R' + $nbRun + ':' + ($run.points || "___") + ' '
 			$strRun = $strRun + 'R' + $nbRun + ':' + (($run.valid && $run.points) || "__") + ' '
 			$nbRun = $nbRun+1
 		if $strRun.length > 20
