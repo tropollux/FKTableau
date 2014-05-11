@@ -309,8 +309,10 @@ public class Classement {
 			runJuges = queryRunJuges.list();
 			List<PointsRun> runs = manche.getRuns();
 			for (RunJuge runJuge : runJuges) {
-				System.out.println("manche non validée " + manche + "pour le run : " + runJuge);
-				runs.get(runJuge.getRun()-1).setValid(false);
+				if (runs != null && runs.size() >= runJuge.getRun()) {
+					System.out.println("manche non validée " + manche + "pour le run : " + runJuge);
+					runs.get(runJuge.getRun()-1).setValid(false);
+				}
 			}
 		} finally {
 			if (session != null) {
@@ -481,8 +483,7 @@ public class Classement {
 				e1.printStackTrace();
 			}
 
-			System.out.println("c'est parti pour l'import du fichier "
-					+ fileName);
+			System.out.println("c'est parti pour l'import du fichier " + fileName);
 			BufferedReader bf;
 			bf = new BufferedReader(new FileReader(file));
 			String newRun;
@@ -503,10 +504,8 @@ public class Classement {
 						int typeManche = Integer.parseInt(split[2]);
 						int nRun = Integer.parseInt(split[3]);
 						Double points = Double.parseDouble(split[4]);
-						System.out.println("tentative d'import de la ligne "
-								+ newRun);
-						Manche majManche = majRun(courseId, codeCoureur,
-								typeManche, nRun, points.intValue());
+						System.out.println("tentative d'import de la ligne " + newRun);
+						Manche majManche = majRun(courseId, codeCoureur, typeManche, nRun, points.intValue());
 						if (majManche != null) {
 							lastManche = majManche;
 							nbLigneslus++;
