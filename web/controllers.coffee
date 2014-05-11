@@ -358,7 +358,10 @@ homeController = ($scope, $http, $location) ->
 		$strRun = ''
 		$nbRun=1
 		for $run in $res.runs
-			$strRun = $strRun + 'R' + $nbRun + ':' + (($run.valid && $run.points) || "__") + ' '
+			if ($run.valid && $run.points != null)
+				$strRun = $strRun + 'R' + $nbRun + ':' + $run.points + ' '
+			else
+				$strRun = $strRun + 'R' + $nbRun + ':' + "__" + ' '
 			$nbRun = $nbRun+1
 		if $strRun.length > 20
 			$scope.tableau.lignes.push { text: $strRun, scroll: true }
